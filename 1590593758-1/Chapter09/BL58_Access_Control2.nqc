@@ -1,0 +1,289 @@
+// BL58_Access_Control2.nqc
+// A sumo-bot program for Gargantuan-Bot Version BL58
+
+#include "Gargantuan-Bot-BL58.nqh"   // include our header
+
+task main()
+{
+  SetSensor(See,SENSOR_LIGHT);     // initialize the sensors
+  SetSensor(LBump,SENSOR_TOUCH);
+  SetSensor(Rotate,SENSOR_ROTATION);
+
+  Calibrate();    // calibrating light sensors...
+
+  OnFwd(Left+Right);    // get moving forward...
+
+  ClearSensor(Rotate); // clear the rotation sensor
+
+  start BLWatch;   // turn on all four tasks!
+  start BRWatch;
+  start LWatch;
+  start Maneuver;
+}
+
+// Task Bump Left Watch
+task BLWatch()
+{
+   // highest priority
+   SetPriority(0);
+
+   while(true)   // infinite loop - continually check sensor
+   {
+      // until LBump is released
+      until(LBump==0&check==0);
+
+         acquire(ACQUIRE_USER_1)  // get control
+         {
+              if(fwd == 1)  // if we're going forward
+              {
+              if(Rotate == 0) // if head is aligned
+              {
+              TurnL();  // turn left
+              PlaySound(SOUND_UP);
+              }
+
+              else      // if head isn't aligned
+              {
+              Off(Head);  // stop head from rotating immediately
+              TurnR();    // turn right
+              PlaySound(SOUND_UP);
+              }
+              }
+
+              else    // if we're in reverse
+              {
+              if(Rotate == 150)  // if head is aligned
+              {
+                TurnL();    // turn left
+                PlaySound(SOUND_UP);
+              }
+
+              else  // if head isn't aligned
+              {
+              Off(Head);  // stop head from rotating immediately
+              TurnL();    // turn left
+              PlaySound(SOUND_UP);
+              }
+             }
+         }
+   }
+}
+
+// Task Bump Right Watch
+task BRWatch()
+{
+   // second highest priority
+   SetPriority(1);
+
+   while(true)   // infinite loop - continually check sensor
+   {
+      // until RBump (under name of "See") is pressed
+      until(See==100);
+
+         acquire(ACQUIRE_USER_1)  // get control
+         {
+              if(fwd == 1)   // if we're going forward
+              {
+              if(Rotate == 0)  // if head is aligned
+              {
+              TurnR(); // turn right
+              PlaySound(SOUND_DOWN);
+              }
+
+              else    // if head isn't aligned
+              {
+              Off(Head);  // stop head from rotating immediately
+              TurnR();    // turn right
+              PlaySound(SOUND_DOWN);
+              }
+              }
+
+              else    // if we're in reverse
+              {
+              if(Rotate == 150)  // if head is aligned
+              {
+                TurnR();  // turn right
+                PlaySound(SOUND_DOWN);
+              }
+
+              // if head is not aligned and slightly to the left
+              else if(Rotate < 150)
+              {
+              Off(Head); // stop head from rotating immediately
+              TurnR();   // turn right
+              PlaySound(SOUND_DOWN);
+              }
+
+              // if head is not aligned and slightly to the right
+              else
+              {
+              Off(Head);  // stop head from rotating immediately
+              TurnR();    // turn right
+              OnFwd(Head);       // reposition head
+              until(Rotate==150);
+              Off(Head);
+              PlaySound(SOUND_DOWN);
+              }
+           }
+        }
+   }
+}
+
+// Task that watches for the line
+task LWatch()
+{
+   // third highest priority
+   SetPriority(2);
+
+   while(true)   // infinite loop - always check for line
+   {
+      until(See<=threshold); // until light sensor detects line
+
+         acquire(ACQUIRE_USER_1)  // get control
+         {
+             // allow left bumper to gain control if needed
+             check = 0;
+
+             if(fwd == 1)   // if going forward...
+             {
+             Reverse();   // go the other way!
+             fwd = 0;     // update variables!
+             rvs = 1;
+             OnRev(Head);   // turn head 180 degrees to other side
+             until(Rotate==150);
+             Off(Head);
+             PlaySound(SOUND_UP);
+             }
+
+             else     // if we're in reverse
+             {
+             Forward();   // go the other way!
+             fwd = 1;       // update variables
+             rvs = 0;
+             OnFwd(Head);  // turn head 180 degrees to other side
+             until(Rotate==0);
+             Off(Head);
+             PlaySound(SOUND_UP);
+             }
+         }
+      }
+}
+
+// Our maneuvering task
+task Maneuver()
+{
+   // fourth highest priority
+   SetPriority(3);
+
+   while(true)   // infinite loop - continually check
+   {
+         acquire(ACQUIRE_USER_1) // get control
+         {
+           // if we're going forward and head is not aligned
+           if(fwd == 1 & Rotate!=0)
+           {
+           OnFwd(Head);     // properly align head
+           until(Rotate==0);
+           Off(Head);
+           PlaySound(SOUND_CLICK);
+           }
+
+           // if we're going in reverse and head is not aligned
+           else if(rvs == 1 & Rotate != 150)
+           {
+           OnRev(Head);     // properly align head
+           until(Rotate==150);
+           Off(Head);
+           PlaySound(SOUND_DOUBLE_BEEP);
+           }
+
+           // once this is done, wait a little before "opponent check"
+           Wait(GO);
+
+           if(fwd == 1)  // if going forward
+           {
+            check = 1;  // prevent BLWatch task from interfering
+            OnRev(Head);
+            until(Rotate==40); // position head for a check
+
+            // if we are pushing opponent
+            if(LBump==0)
+            {
+              // align head and go forward
+              PlaySound(SOUND_UP);
+              Fwd(Head);
+              until(Rotate==0);
+              Off(Head);
+              Forward();
+              check = 0;  // allow BLWatch task to take over if needed
+              Wait(PUSH); // push for eight seconds before checking again
+            }
+
+            // if we aren't pushing opponent
+            else
+            {
+            // align head and turn
+            Fwd(Head);
+            until(Rotate==0);
+            Off(Head);
+            check = 0;  // allow BLWatch task to take over if needed
+            Turn();
+            Forward();
+            PlaySound(SOUND_DOUBLE_BEEP);
+            }
+          }
+
+           // if in reverse
+           else
+           {
+            check = 1;  // prevent BLWatch task from interfering
+            OnRev(Head);
+            until(Rotate==190);  // position head for a check
+
+            // if we are pushing opponent
+            if(LBump==0)
+            {
+              // align head and go forward
+              PlaySound(SOUND_UP);
+              Fwd(Head);
+              until(Rotate==150);
+              Off(Head);
+              Reverse();
+              check = 0;  // allow BLWatch task to take over if needed
+              Wait(PUSH); // push for eight seconds before checking again
+            }
+
+            // if we aren't pushing opponent
+            else
+            {
+            // align head and turn
+            Fwd(Head);
+            until(Rotate==150);
+            Off(Head);
+            check = 0;   // allow BLWatch task to take over if needed
+            Turn();
+            Reverse();
+            PlaySound(SOUND_DOUBLE_BEEP);
+            }
+         }
+     }
+  }
+}
+
+/* This function calibrates the
+*  "line searching" light sensors */
+void Calibrate()
+{
+    until(LBump==0);
+    line=See;
+    threshold=line+AMOUNT;
+    Wait(CALIBRATION);
+    until(LBump==1);
+    PlaySound(SOUND_CLICK);
+    Wait(CALIBRATION);
+    until(LBump==0);
+    Wait(CALIBRATION);
+    until(LBump==1);
+    PlaySound(SOUND_CLICK);
+    Wait(CALIBRATION);
+}

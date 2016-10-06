@@ -1,0 +1,81 @@
+/* Gargantuan-Bot-BL58.nqh - A file holding important
+* instructions for Gargantuan-Bot version BL58.
+* To be included in BL58's main program */
+
+// set some variables
+int line,threshold,fwd = 1,rvs = 0, check = 0;
+
+// motors
+#define Left OUT_A
+#define Right OUT_C
+#define Head OUT_B
+
+// constants
+#define CALIBRATION 50
+#define GO 500
+#define PUSH 800
+#define TURN 300
+#define AMOUNT 2
+
+// sensors
+#define See SENSOR_2
+#define LBump SENSOR_1
+#define Rotate SENSOR_3
+
+// go forward
+void Forward()
+{
+   OnFwd(Left+Right);
+}
+
+// go in reverse
+void Reverse()
+{
+   OnRev(Left+Right);
+}
+
+/* smart function for turning right - can
+*  turn right regardless of BL58's current direction*/
+void TurnR()
+{
+   if(fwd == 1)
+   {
+   Rev(Right);
+   Wait(TURN);
+   Fwd(Right);
+   }
+   
+   else
+   {
+   Fwd(Left);
+   Wait(TURN);
+   Rev(Left);
+   }
+}
+
+/* smart function for turning left - can
+*  turn left regardless of BL58's current direction*/
+void TurnL()
+{
+   if(fwd == 1)
+   {
+   Rev(Left);
+   Wait(TURN);
+   Fwd(Left);
+   }
+   
+   else
+   {
+   Fwd(Right);
+   Wait(TURN);
+   Rev(Right);
+   }
+}
+
+// basic turning fuction
+void Turn()
+{
+   Rev(Left);
+   Fwd(Right);
+   Wait(TURN);
+}

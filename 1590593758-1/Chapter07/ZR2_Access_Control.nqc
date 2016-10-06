@@ -1,0 +1,216 @@
+// ZR2_Access_Control.nqc
+// A sumo-bot program for Brain-Bot Version ZR2
+
+#include "Brain-Bot-ZR2.nqh"   // include our header
+
+// set some variables
+int line,threshold,fwd = 1,rvs = 0,speed = 0;
+
+task main()
+{
+  SetSensor(See,SENSOR_LIGHT);      // let's not forget to
+  SetSensor(Clicker,SENSOR_TOUCH);  // initialize our
+  SetSensor(Clicker2,SENSOR_TOUCH); // sensors!
+
+  SetPower(Switch,4);  // putting OUT_B at the correct power level
+
+  Off(Switch);  // make sure these motors are in brake mode
+
+  Calibrate();    // calibrating light sensor...
+
+  OnFwd(Left+Right);    // get moving forward...
+
+  ClearTimer(0);     // clear the timers
+  ClearTimer(1);
+
+  start LWatch;   // turn on all five tasks!
+  start Maneuver;
+  start Spin;
+  start Spin2;
+  start Crash;
+}
+
+// Task that watches for the line
+task LWatch()
+{
+   // highest priority
+   SetPriority(0);
+
+   while(true)   // infinite loop - always check for line
+   {
+      until(See<=threshold); // until light sensor detects line
+
+         acquire(ACQUIRE_USER_1)  // get control
+         {
+           if(speed == 1)   // if in slow speed..
+           {
+             if(fwd == 1)   // if going forward...
+             {
+             SwitchF();   // switch to fast
+             speed = 0;   // tell program we're on fast speed
+             Reverse();   // go the other way!
+             Wait(SEARCH);
+             fwd = 0;     // update variables!
+             rvs = 1;
+             PlaySound(SOUND_UP);
+             ClearTimer(0+1);  // clear the timers
+             }
+
+             else     // if we're in reverse
+             {
+             SwitchF();   // switch to fast
+             speed = 0;   // tell program we're on fast speed
+             Forward();   // go the other way!
+             Wait(SEARCH);
+             fwd = 1;       // update variables
+             rvs = 0;
+             PlaySound(SOUND_UP);
+             ClearTimer(0+1);  // clear the timers
+             }
+           }
+
+           else    // this is if we're already on fast speed
+           {
+             if(fwd == 1)   // if we're going forward
+             {
+             Reverse();       // go the other way!
+             Wait(SEARCH);
+             fwd = 0;         // update variables
+             rvs = 1;
+             PlaySound(SOUND_UP);
+             ClearTimer(0+1);  // clear the timers
+             }
+
+             else      // if we're going in reverse
+             {
+             Forward();  // go the other way!
+             Wait(SEARCH);
+             fwd = 1;     // update variables
+             rvs = 0;
+             PlaySound(SOUND_UP);
+             ClearTimer(0+1);  // clear the timers
+             }
+           }
+        }
+    }
+}
+
+// This is the "attacking" task
+task Crash()
+{
+   // second highest priority
+   SetPriority(1);
+
+   while(true)   // infinite loop - continually check
+   {
+      // until timer 0 > than 0.3 seconds or timer 1 > 0.3 seconds
+      until(Timer(0)>TOUCH || Timer(1)>TOUCH);
+
+         acquire(ACQUIRE_USER_1)   // get control
+         {
+            if(fwd == 1)  // if going forward
+            {
+              SwitchS();   // attack!
+              speed = 1;   // update speed variable
+              OnFwd(Left+Right); // go forward
+              Wait(1000);    // wait 10 seconds
+              SwitchF();     // switch to fast speed
+              speed = 0;     // update variable
+              ClearTimer(0);
+              ClearTimer(1);  // clear timers
+            }
+            
+            else   // if going in reverse
+            {
+              SwitchS();   // attack!
+              speed = 1;   // update speed variable
+              OnRev(Left+Right); // go in reverse
+              Wait(1000);    // wait 10 seconds
+              SwitchF();     // switch to fast speed
+              speed = 0;     // update variable
+              ClearTimer(0);
+              ClearTimer(1);  // clear timers
+            }
+       }
+   }
+}
+
+// Our maneuvering task
+task Maneuver()
+{
+   // third highest priority
+   SetPriority(2);
+
+   while(true)   // infinite loop - continually do this
+   {
+         acquire(ACQUIRE_USER_1) // get control
+         {
+           if(fwd == 1)  // if going forward
+           {
+            while(true)   // infinite loop - continually do this
+            {
+            OnFwd(Left+Right);
+            Wait(GO);         // go straight for a while
+            stop Crash;       // turn off the Crash task
+            Turn();       // make a turn
+            Fwd(Left+Right);
+            Wait(SEARCH);     // go forward for a second
+            ClearTimer(0+1);  // clear the timers
+            start Crash;      // start Crash back up
+            }
+           }
+
+          else      // if going in reverse
+          {
+             while(true)    // infinite loop - continually do this
+             {
+             OnRev(Left+Right);
+             Wait(GO);         // go straight for a while
+             stop Crash;       // turn off the Crash task
+             Turn();       // make a turn
+             Rev(Left+Right);
+             Wait(SEARCH);     // go forward for a second
+             ClearTimer(0+1);  // clear the timers
+             start Crash;      // start Crash back up
+             }
+          }
+      }
+   }
+}
+
+// This task watches the touch sensor on input port 1
+task Spin()
+{
+   while(true)      // infinite loop - continually check
+   {
+      until(Clicker==1); // until sensor clicked...
+      until(Clicker==0); //...until sensor unclicked...
+      ClearTimer(0); // ...clear timer 0
+   }
+}
+
+// This task watches the touch sensor on input port 3
+task Spin2()
+{
+   while(true)      // infinite loop - continually check
+   {
+      until(Clicker2==1); // until sensor clicked...
+      until(Clicker2==0); //...until sensor unclicked...
+      ClearTimer(1); // ...clear timer 1
+   }
+}
+
+/* This function calibrates the
+*  "line searching" light sensors */
+void Calibrate()
+{
+    until(Clicker2==1);
+    line=See;
+    threshold=line+AMOUNT;
+    until(Clicker2==0);
+    PlaySound(SOUND_CLICK);
+    until(Clicker2==1);
+    until(Clicker2==0);
+    PlaySound(SOUND_CLICK);
+    Wait(CALIBRATION);
+}

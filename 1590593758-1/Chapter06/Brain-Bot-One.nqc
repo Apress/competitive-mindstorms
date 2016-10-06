@@ -1,0 +1,50 @@
+// Brain-Bot-One.nqc - a program for the Brain-Bot chassis.
+
+// let's include the header for this program
+#include "Brain-Bot.nqh"
+
+task main()
+{
+  SetPower(Switch,3);   // set power for switch motors to 3
+
+  // let's do this twice
+  repeat(2)
+  {
+  Forward();
+  Wait(Straight);
+  TurnR();
+  PlaySound(SOUND_CLICK);
+  }
+  
+  // and this twice
+  repeat(2)
+  {
+  Reverse();
+  Wait(Straight);
+  TurnL();
+  PlaySound(SOUND_CLICK);
+  }
+
+  SwitchS();     // let's try out the switching mechanisms
+
+  // we'll do this twice in slow mode
+  repeat(2)
+  {
+  Wait(Straight);
+  TurnR();
+  PlaySound(SOUND_UP);
+  }
+  
+  SwitchF();      // switch back to fast
+
+  // then do this twice
+  repeat(2)
+  {
+  Wait(Straight);
+  TurnL();
+  PlaySound(SOUND_UP);
+  }
+  
+  Stop();       // we're done, turn off motors
+  PlaySound(SOUND_DOWN);   // play a sound so we know we're done
+}

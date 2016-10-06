@@ -1,0 +1,142 @@
+// XK2_Access_Control.nqc
+// A sumo-bot program for Zip-Bam-Bot Version XK2
+
+// motors
+#define Left OUT_A
+#define Right OUT_C
+
+// sensors
+#define LBump SENSOR_1
+#define RBump SENSOR_3
+#define See SENSOR_2
+
+// constants
+#define BACK_TIME 50
+#define TURN 40
+#define AMOUNT 3
+#define LIMIT 25
+#define LIGHT_BACK 40
+
+// variables for calibration
+int line=0,threshold=0;
+
+task main()
+{
+   // initialize sensors
+   SetSensor(LBump,SENSOR_TOUCH);
+   SetSensor(RBump,SENSOR_TOUCH);
+   SetSensor(See,SENSOR_LIGHT);
+
+   // calibrate light sensor
+   Calibrate();
+
+   // start motors
+   OnFwd(Left+Right);
+
+   // lets clear the timer we are going to use
+   ClearTimer(0);
+
+   // start tasks
+   start LWatch;
+   start Crash;
+   start Maneuver;
+}
+
+// this task watches for the line
+task LWatch()
+{
+   // highest priority
+   SetPriority(0);
+   
+   // infinite loop
+   while(true)
+   {
+      until(See<=threshold);   // until we see the line
+      
+         acquire(ACQUIRE_USER_1)
+         {
+           Avoid();      // avoid the line
+         }
+   }
+}
+
+// this task watches the touch sensors
+task Crash()
+{
+   // second highest priority
+   SetPriority(1);
+   
+   // infinite loop
+   while(true)
+   {
+      // until left or right touch sensors are pressed
+      until(LBump|RBump==1);
+
+         acquire(ACQUIRE_USER_1)
+         {
+            Win();    // take control and crash repeatedly
+         }
+    }
+}
+
+// this task introduces some random turns
+task Maneuver()
+{
+   // third highest priority
+   SetPriority(2);
+
+   // infinite loop
+   while(true)
+   {
+      // until timer is >= 2.5 seconds which is determined by LIMIT
+      until(Timer(0)>=LIMIT);
+
+         acquire(ACQUIRE_USER_1)
+         {
+            Change();   // execute our new function
+         }
+    }
+}
+
+// this function sets the robot up for another crash
+void Win()
+{
+   Rev(Left+Right);
+   Wait(BACK_TIME);
+   OnFwd(Left+Right);
+   ClearTimer(0);
+}
+
+// this function avoids the line
+void Avoid()
+{
+   OnRev(Left+Right);
+   Wait(LIGHT_BACK);
+   Fwd(Left);
+   Wait(TURN);
+   OnFwd(Left+Right);
+   ClearTimer(0);
+}
+   
+// this function changes the direction of the robot
+void Change()
+{
+   Rev(Left);
+   Wait(TURN+Random(40));
+   Fwd(Left);
+   ClearTimer(0);
+}
+
+// this is the calibrating function
+void Calibrate()
+{
+    until(RBump==1);
+    line=See;
+    threshold=line+AMOUNT;
+    until(RBump==0);
+    PlaySound(SOUND_CLICK);
+    until(RBump==1);
+    until(RBump==0);
+    PlaySound(SOUND_CLICK);
+    Wait(TURN);
+}

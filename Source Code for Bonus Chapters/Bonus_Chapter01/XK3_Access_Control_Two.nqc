@@ -1,0 +1,189 @@
+/* XK3_Access_Control_Two.nqc - A sumo-bot program for Zip-Bam-Bot
+   Version XK3 with support for a second light sensor */
+
+// motors
+#define Left OUT_A
+#define Right OUT_C
+#define Front OUT_B
+
+// sensors
+#define Clicker SENSOR_1
+#define See SENSOR_3
+#define See2 SENSOR_2
+
+// constants
+#define BACK_TIME 80
+#define WAITER 50
+#define TURN 65
+#define AMOUNT 3
+#define LIMIT 25
+#define LIGHT_BACK 60
+#define TOUCH 2
+
+// variables for calibration
+int line=0,threshold=0;
+
+task main()
+{
+   // initialize sensors
+   SetSensor(Clicker,SENSOR_TOUCH);
+   SetSensor(See,SENSOR_LIGHT);
+   SetSensor(See2,SENSOR_LIGHT);
+
+   // calibrate light sensor
+   Calibrate();
+
+   // start motors and tasks
+   OnFwd(Left+Right);
+
+   // lets clear the timers we are going to use
+   ClearTimer(0);
+   ClearTimer(1);
+
+   // start tasks
+   start LWatch;
+   start Crash;
+   start Maneuver;
+   start BLight;
+}
+
+// this task watches for the line
+task LWatch()
+{
+   // highest priority
+   SetPriority(0);
+   
+   while(true)   // infinite loop - always check for line
+   {
+      until(See<=threshold); // until light sensor detects line
+      
+         acquire(ACQUIRE_USER_1)
+         {
+           Avoid();              // avoid the line!!!
+           PlaySound(SOUND_UP);  // end of this task...
+         }
+   }
+}
+
+// this task watches the back light sensor
+task BLight()
+{
+   // highest priority
+   SetPriority(0);
+
+   while(true)   // infinite loop - always check for line
+   {
+      until(See2 <= threshold);
+
+         acquire(ACQUIRE_USER_1)
+         {
+            Avoider();               // change direction
+            PlaySound(SOUND_CLICK);  // end of this task...
+         }
+    }
+}
+
+// this task takes care of the readings the touch sensor provides
+task Crash()
+{
+   // second highest priority
+   SetPriority(1);
+   
+   while(true)   // infinite loop - continually check
+   {
+      OnFwd(Front); // turn on the counter-rotating wheels
+      start Spin;   // start the task that keeps track of touch sensor
+      
+      until(Timer(1) > TOUCH); // until timer one > than .2 seconds
+
+         acquire(ACQUIRE_USER_1)
+         {
+            Win();               // attack!!!
+            PlaySound(SOUND_UP); // end of this task...
+         }
+   }
+}
+
+// this task adds random to the robots movement patterns
+task Maneuver()
+{
+   // third highest priority
+   SetPriority(2);
+
+   while(true)   // infinite loop - keep doing this!
+   {
+      until(Timer(0)>=LIMIT); // until timer 0 is >= 2.5 seconds
+
+         acquire(ACQUIRE_USER_1)
+         {
+            Change();               // change direction
+            PlaySound(SOUND_DOWN);  // end of this task...
+         }
+    }
+}
+
+// this task watches the touch sensor
+task Spin()
+{
+   while(true)      // infinite loop - continually check
+   {
+      until(Clicker==1); // until it hits sensor...
+      until(Clicker==0); //...until it goes away from sensor...
+      ClearTimer(1); // ...clear timer one
+   }
+}
+
+// this function sets the robot up for another crash
+void Win()
+{
+   Rev(Left+Right);
+   Wait(BACK_TIME);
+   OnFwd(Left+Right);
+   ClearTimer(0);     // remember to clear the timers!
+   ClearTimer(1);
+}
+
+// this function avoids the line
+void Avoid()
+{
+   OnRev(Left+Right);
+   Wait(LIGHT_BACK);
+   Fwd(Left);
+   Wait(TURN);
+   OnFwd(Left+Right);
+   ClearTimer(0);
+   ClearTimer(1);
+}
+
+// this function is used by the second line-detecting task to avoid the line
+void Avoider()
+{
+   OnFwd(Left+Right);
+   Wait(BACK_TIME);
+   ClearTimer(0);
+   ClearTimer(1);
+}
+   
+// this function changes the direction of the robot
+void Change()
+{
+   Rev(Left);
+   Wait(TURN+Random(40));
+   Fwd(Left);
+   ClearTimer(0);
+   ClearTimer(1);
+}
+
+// this is the calibrating function
+void Calibrate()
+{
+    until(Clicker==1);
+    line=See;
+    threshold=line+AMOUNT;
+    until(Clicker==0);
+    PlaySound(SOUND_CLICK);
+    until(Clicker==1);
+    until(Clicker==0);
+    PlaySound(SOUND_CLICK);
+    Wait(WAITER);
+}

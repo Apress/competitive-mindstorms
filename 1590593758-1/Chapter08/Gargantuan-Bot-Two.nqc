@@ -1,0 +1,64 @@
+// Gargantuan-Bot-Two.nqc
+// A program for the Gargantuan-Bot Chassis
+
+#include "Gargantuan-Bot.nqh" // include our header
+
+int x = 0;  // our x variable
+
+// main task
+task main()
+{
+     // set the display to our "x" variable
+     SetUserDisplay(x,0);
+
+      // start task that constantly updates "x" variable
+      start X;
+     
+      while(true) // infinite loop
+      {
+         // clear timer and go forward...
+         ClearTimer(0);
+         Forward();
+         until(Timer(0) > TIME); // ...until timer is > TIME
+
+      // if x is less than 31, turn left
+      if(x < 31)
+      {
+        TurnL();
+      }
+
+      // if x is more than 30, turn right
+      else if (x > 30)
+      {
+        TurnR();
+      }
+      
+      // clear timer and go in reverse...
+      ClearTimer(0);
+      Reverse();
+      until(Timer(0) > TIME); //...until timer is more than TIME
+      
+      // if x is less than 31, turn left
+      if(x < 31)
+      {
+        TurnL();
+      }
+
+      // if x is more than 30, turn right
+      else if (x > 30)
+      {
+        TurnR();
+      }
+      
+      PlaySong();  // play a song
+   }
+}
+
+// this task constantly updates the "x" variable
+task X()
+{
+   while(true) // infinite loop - constantly update
+    {
+      x = Random(60);  // x = anything 0 to 60
+    }
+}

@@ -1,0 +1,49 @@
+// Gargantuan-Bot-One.nqc
+// A program for the Gargantuan-Bot Chassis
+
+#include "Gargantuan-Bot.nqh" // include our header
+
+int fwd = 0;  // our fwd variable
+
+// main task
+task main()
+{
+    // set the display to our "fwd" variable
+    SetUserDisplay(fwd,0);
+
+    // head forward for while, then reverse for a while
+    Forward();
+    fwd = 1;
+    Wait(GO - Random(SEARCH));
+    Reverse();
+    fwd = 0;
+    Wait(SPIN);
+
+    TurnL();  // turn left
+    
+    Forward();  // head forward again
+    fwd = 1;
+    
+    // wait for specified amount of time + random amount
+    Wait(SPIN + Random(SEARCH));
+    
+    PlaySong();  // play a song
+    
+    // go in reverse for a little while
+    Reverse();
+    fwd = 0;
+    Wait(SPIN + Random(SEARCH));
+    
+    TurnR(); // turn right
+    
+    // go forward for a little while then stop
+    Forward();
+    fwd = 1;
+    Wait(100);
+    Off(Left+Right);
+    
+    // play a song and a sound
+    PlaySong();
+    PlaySound(SOUND_DOUBLE_BEEP);
+}
+

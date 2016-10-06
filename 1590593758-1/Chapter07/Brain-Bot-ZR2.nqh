@@ -1,0 +1,59 @@
+/* Brain-Bot-ZR2.nqh - A file holding important
+* instructions for Brain-Bot version ZR2.
+* To be included in ZR2's main program */
+
+// motors
+#define Left OUT_A
+#define Right OUT_C
+#define Switch OUT_B
+
+// constants
+#define CHANGE 85
+#define CHANGER 45
+#define CALIBRATION 50
+#define SEARCH  100
+#define SPIN 65
+#define GO 565
+#define AMOUNT 3
+#define TOUCH 3
+
+// sensors
+#define Clicker SENSOR_1
+#define See SENSOR_2
+#define Clicker2 SENSOR_3
+
+// go forward
+void Forward()
+{
+   OnFwd(Left+Right);
+}
+
+// go in reverse
+void Reverse()
+{
+   OnRev(Left+Right);
+}
+
+// switch gears to fast speed
+void SwitchF()
+{
+   OnRev(Switch);
+   Wait(CHANGER);
+   Off(Switch);
+}
+
+// switch gears to slow speed
+void SwitchS()
+{
+   OnFwd(Switch);
+   Wait(CHANGE);
+   Off(Switch);
+}
+
+// spin in place
+void Turn()
+{
+   Rev(Left);
+   Fwd(Right);
+   Wait(SPIN);
+}

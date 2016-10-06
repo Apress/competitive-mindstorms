@@ -1,0 +1,39 @@
+// Brain-Bot-Two.nqc - a program for the Brain-Bot chassis
+
+#include "Brain-Bot.nqh"
+
+task main()
+{
+  SetUserDisplay(Timer(0),0);   // let's set the RCX's LCD to Timer 0
+  
+  SetPower(Switch,3);     // set power for switch motors to 3
+  
+  ClearTimer(0);   // clear the timer
+  
+  Forward();       // go forward
+
+  until(Timer(0) >= 25);  // until timer is >= 2.5 seconds
+  PlaySound(SOUND_CLICK);
+  ClearTimer(0);           // clear the timer
+  
+  SwitchS();      // switch to slow mode
+  Reverse();      // then reverse
+  
+  until(Timer(0) >= 35);   // until timer is >= 3.5 seconds
+  PlaySound(SOUND_CLICK);
+
+  TurnR();               // turn right
+  Forward();             // go forward
+  SwitchF();             // switch back to fast
+  TurnL();               // now turn left
+
+  ClearTimer(0);         // then and only then clear the timer
+
+  Reverse();             // now put in reverse
+
+  until(Timer(0) >= 45);   // until timer is >= 4.5 seconds
+  
+  Stop();   // stop!!!
+
+  PlaySound(SOUND_DOUBLE_BEEP); // we're done
+}

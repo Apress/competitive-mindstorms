@@ -1,0 +1,24 @@
+/* ZBB2.nqc - A simple program for the Zip-Bam-Bot chassis
+ with some random movements */
+
+// motors
+#define Left OUT_A
+#define Right OUT_C
+
+// constants
+#define TURN 10
+#define FORWARD 50
+
+task main()           // main task
+{
+  while(true)         // infinite loop
+ {
+   OnFwd(Left+Right);
+   Wait(FORWARD+Random(200));  // wait .5 seconds + random
+   PlaySound (SOUND_CLICK);    // play sound "click"
+   Rev(Right);
+   Wait(TURN+Random(50));      // wait .1 seconds + random
+   PlaySound (SOUND_CLICK);    // play sound "click"
+   Fwd(Right);
+ }
+}

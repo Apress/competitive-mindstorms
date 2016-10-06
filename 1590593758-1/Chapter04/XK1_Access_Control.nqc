@@ -1,0 +1,104 @@
+// XK1_Access_Control.nqc
+// A sumo-bot program for Zip-Bam-Bot Version XK1
+
+// motors
+#define Left OUT_A
+#define Right OUT_C
+
+// sensors
+#define LBump SENSOR_1
+#define RBump SENSOR_3
+#define See SENSOR_2
+
+// constants
+#define BACK_TIME 70
+#define TURN 45
+#define AMOUNT 3
+#define LIMIT 35
+#define LIGHT_BACK 20
+
+// variables for calibration
+int line=0,threshold=0;
+
+task main()
+{
+   // initialize sensors
+   SetSensor(LBump,SENSOR_TOUCH);
+   SetSensor(RBump,SENSOR_TOUCH);
+   SetSensor(See,SENSOR_LIGHT);
+
+   // calibrate light sensor
+   Calibrate();
+
+   // start motors and tasks
+   OnFwd(Left+Right);
+
+   // start tasks
+   start LWatch;
+   start Crash;
+}
+
+// this task watches for the line
+task LWatch()
+{
+   SetPriority(0);   // highest priority
+   
+   while(true)
+   {
+      until(See<=threshold);  // if we see the line...
+      
+         acquire(ACQUIRE_USER_1)
+         {
+           Avoid();        // ...take control and avoid it
+         }
+   }
+}
+
+// this task watches the touch sensors
+task Crash()
+{
+   SetPriority(1);     // second highest priority
+   
+   while(true)
+   {
+      until(LBump|RBump==1);  // if touch sensors are pressed...
+
+         acquire(ACQUIRE_USER_1)
+         {
+            Win();     // ...take control and crash repeatedly
+         }
+   }
+
+}
+
+// this function sets the robot up for another crash
+void Win()
+{
+  Rev(Left+Right);
+  Wait(BACK_TIME);
+  OnFwd(Left+Right);
+}
+
+// this function avoids the line
+void Avoid()
+{
+   OnRev(Left+Right);
+   Wait(BACK_TIME);
+   Fwd(Left);
+   Wait(TURN);
+   OnFwd(Left+Right);
+}
+   
+// this is the calibrating function
+void Calibrate()
+{
+    until(RBump==1);
+    line=See;
+    threshold=line+AMOUNT;
+    until(RBump==0);
+    PlaySound(SOUND_CLICK);
+    until(RBump==1);
+    until(RBump==0);
+    PlaySound(SOUND_CLICK);
+    Wait(LIMIT);
+}

@@ -1,0 +1,36 @@
+/* ZBB4.nqc - A simple program for the Zip-Bam-Bot chassis.
+   It has some random in a function and is suitable
+   for being the "running around" code in a sumo-bot */
+
+// motors
+#define Left OUT_A
+#define Right OUT_C
+
+// constants
+#define TURN 10
+#define LIMIT 35
+
+// The main task
+task main()
+{
+  // Clear the timer we are going to use
+  ClearTimer(0);
+
+  // Start the motors
+  OnFwd(Left+Right);
+
+  while(true)    // here is the infinite loop
+ {
+   Running();    // this command executes the Running() function
+ }
+}
+
+// This is the function
+void Running()
+{
+   until(Timer(0)>=LIMIT);   // here we are checking the timer
+   Rev(Left);                // reverse the left motor
+   Wait(TURN+Random(40));    // wait 0.1 seconds and random amount
+   Fwd(Left);                // this makes the robot go forward
+   ClearTimer(0);            // don't forget to clear the timer
+}

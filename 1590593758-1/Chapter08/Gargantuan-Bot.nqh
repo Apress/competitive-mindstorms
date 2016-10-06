@@ -1,0 +1,53 @@
+/* Gargantuan-Bot.nqh - A file holding important
+* instructions for the Gargantuan-Bot chassis.
+* To be included in Gargantuan-Bot's main program */
+
+// motors
+#define Left OUT_A
+#define Right OUT_C
+
+// constants
+#define SEARCH  100
+#define SPIN 300
+#define GO 500
+#define TIME 50
+
+// go forward
+void Forward()
+{
+   OnFwd(Left+Right);
+}
+
+// go in reverse
+void Reverse()
+{
+   OnRev(Left+Right);
+}
+
+// play a song
+void PlaySong()
+{
+   PlayTone(450,50);
+   PlayTone(220,70);
+   PlayTone(655,35);
+   PlayTone(700,35);
+   PlayTone(750,35);
+   PlayTone(440,50);
+   PlayTone(800,100);
+}
+
+// spin in place
+void TurnL()
+{
+   Rev(Left);
+   Fwd(Right);
+   Wait(SPIN);
+}
+
+// spin in place in a different way
+void TurnR()
+{
+   Rev(Right);
+   Fwd(Left);
+   Wait(SPIN);
+}

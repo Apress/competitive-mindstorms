@@ -1,0 +1,87 @@
+// XK1_Event_Monitoring.nqc
+// A sumo-bot program for Zip-Bam-Bot Version XK1
+
+// motors
+#define Left OUT_A
+#define Right OUT_C
+
+// sensors
+#define LBump SENSOR_1
+#define RBump SENSOR_3
+#define See SENSOR_2
+
+// constants
+#define BACK_TIME 70
+#define TURN 45
+#define AMOUNT 3
+#define LIMIT 35
+#define LIGHT_BACK 20
+
+// variables for calibration
+int line,threshold;
+
+task main()
+{
+   // initialize sensors
+   SetSensor(LBump,SENSOR_TOUCH);
+   SetSensor(RBump,SENSOR_TOUCH);
+   SetSensor(See,SENSOR_LIGHT);
+
+   // initializing events
+   SetEvent(0,LBump,EVENT_TYPE_PRESSED);
+   SetEvent(1,RBump,EVENT_TYPE_PRESSED);
+
+   // calibrate light sensor
+   Calibrate();
+
+   // turn on both motors
+   OnFwd(Left+Right);
+
+   while(true)    // infinite loop
+   {
+      monitor(EVENT_MASK(0) + EVENT_MASK(1))
+      {
+         while(true)   // another infinite loop
+         {
+            until(See<=threshold);  // if we see the line avoid it
+            Avoid();
+         }
+      }
+      catch   // if the touch sensors are pressed, do this function
+      {
+         Win();
+      }
+   }
+}
+
+// this function sets the robot up for another crash
+void Win()
+{
+   Rev(Left+Right);
+   Wait(BACK_TIME);
+   OnFwd(Left+Right);
+}
+
+// this function avoids the line
+void Avoid()
+{
+   OnRev(Left+Right);
+   Wait(LIGHT_BACK);
+   Fwd(Left);
+   Wait(TURN);
+   OnFwd(Left+Right);
+}
+   
+// this is the calibrating function
+void Calibrate()
+{
+    until(RBump==1);
+    line=See;
+    threshold=line+AMOUNT;
+    until(RBump==0);
+    PlaySound(SOUND_CLICK);
+    until(RBump==1);
+    until(RBump==0);
+    PlaySound(SOUND_CLICK);
+    Wait(LIMIT);
+}

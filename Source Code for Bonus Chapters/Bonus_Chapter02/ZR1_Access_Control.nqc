@@ -1,0 +1,213 @@
+// ZR1_Access_Control.nqc
+// A sumo-bot program for Brain-Bot Version ZR1
+
+#include "Brain-Bot-ZR1.nqh"   // include our header
+
+// set some variables
+int line,threshold,thresh,BL = 0,BR = 0,speed = 0;
+
+task main()
+{
+  SetSensor(See,SENSOR_LIGHT);     // let's not forget to
+  SetSensor(LBump,SENSOR_LIGHT);   // initialize our
+  SetSensor(RBump,SENSOR_TOUCH);   // sensors!
+
+  SetPower(Switch,3);  // putting OUT_B at the correct power level
+
+  Off(Switch);  // make sure these motors are in brake mode
+
+  Calibrate();    // calibrating light sensor...
+  
+  Calibrate2();   // calibrating second light sensor...
+  
+  OnFwd(Left+Right);    // get moving forward...
+  
+  start LWatch;   // turn on all six tasks!
+  start Search;
+  start BPressed;
+  start BRWatch;
+  start BLWatch;
+  start Maneuver;
+}
+
+// Task that watches for the line
+task LWatch()
+{
+   // highest priority
+   SetPriority(0);
+
+   while(true)   // infinite loop - always check for line
+   {
+      until(See<=threshold); // until light sensor detects line
+
+         acquire(ACQUIRE_USER_1)  // get control
+         {
+           if(speed == 1)   // if in slow speed..
+           {
+             SwitchF();   // switch to fast
+             speed = 0;   // tell program we're on fast speed
+             Reverse();   // avoid the line!!!
+             Wait(SEARCH);
+             TurnR();
+             BL = 0;
+             BR = 0;
+             PlaySound(SOUND_UP);  // end of this task...
+           }
+
+           else    // this is if we're already on fast speed
+           {
+             Reverse();       // avoid the line!
+             Wait(SEARCH);
+             TurnR();
+             BL = 0;
+             BR = 0;
+             PlaySound(SOUND_UP);  // end of this task...
+           }
+         }
+   }
+}
+
+/* This task searches for the other
+*  sumo-bot with a second light sensor*/
+task Search()
+{
+   // second highest priority
+   SetPriority(1);
+
+   while(true)  // infinite loop - always check for sumo-bots
+   {
+      until(LBump<=thresh); // until sensor detects sumo-bot
+
+      acquire(ACQUIRE_USER_1)  // get control
+      {
+         Wait(CALIBRATION); // wait a little
+
+         /* if Input Port 1 is less than "thresh" or
+         * equal to 100*/
+         if(LBump<=thresh | LBump==100)
+         {
+          BL = 1;
+          BR = 1;
+          SwitchSTurn(); // if true, go on slow speed and...
+          speed = 1;
+          Forward();   // ...attack!
+          until(LBump==thresh+5); // until sumo-bot goes away
+          SwitchF();  // stop attacking
+          speed = 0;
+          BL = 0;
+          BR = 0;
+          PlaySound(SOUND_UP);
+         }
+      }
+   }
+}
+
+/* Task Both Pressed - for when both
+* bumpers are being pressed */
+task BPressed()
+{
+  SetPriority(2);  // third highest prioity
+
+  while(true) // infinite loop - always check for this situation
+  {
+      // until both bumpers are pressed
+      until(LBump==100&RBump==0);
+
+      acquire(ACQUIRE_USER_1) // get control
+      {
+              SwitchS();    // get on slow speed
+              speed = 1;
+              Forward();    // and attack!
+              until(LBump<100&RBump==1); // until we don't detect anymore
+              SwitchF();  // get back on fast speed
+              speed = 0;
+              PlaySound(SOUND_UP);
+      }
+  }
+}
+
+// Task Bump Left Watch
+task BLWatch()
+{
+   // fourth highest priority
+   SetPriority(3);
+
+   while(true)   // infinite loop - continually check sensor
+   {
+      // until LBump is released and "BL" = 0
+      until(LBump==100&BL==0);
+         acquire(ACQUIRE_USER_1)  // get control
+         {
+              TurnLL();         // and turn little left
+              Forward();        // go forwards
+              until(LBump<100); // until not pressed
+              PlaySound(SOUND_UP);
+      }
+   }
+}
+
+// Task Bump Right Watch
+task BRWatch()
+{
+   // fourth highest priority
+   SetPriority(3);
+
+   while(true)   // infinite loop - continually check sensor
+   {
+      until(RBump==0&BR==0); // until RBump is released
+
+         acquire(ACQUIRE_USER_1)  // get control
+         {
+              TurnRL();        // turn right a little
+              Forward();       // go forwards
+              until(RBump==1); // until not released
+              PlaySound(SOUND_UP);
+       }
+   }
+}
+
+// Our maneuvering task
+task Maneuver()
+{
+   // fifth highest priority
+   SetPriority(4);
+
+   while(true)   // infinite loop - continually check
+   {
+         acquire(ACQUIRE_USER_1) // get control
+         {
+           // another infinite loop - always do this
+           while(true)
+           {
+           OnFwd(Left+Right);
+           Wait(GO);
+           HalfSpin();
+           }
+        }
+   }
+}
+
+/* This function calibrates the
+*  "line searching" light sensor */
+void Calibrate()
+{
+    until(RBump==0);
+    line=See;
+    threshold=line+AMOUNT;
+    until(RBump==1);
+    PlaySound(SOUND_CLICK);
+}
+
+/* This function calibrates the
+*  "sumo-bot searching" light sensor */
+void Calibrate2()
+{
+    until(RBump==0);
+    thresh=LBump;
+    until(RBump==1);
+    PlaySound(SOUND_CLICK);
+    until(RBump==0);
+    until(RBump==1);
+    PlaySound(SOUND_CLICK);
+    Wait(CALIBRATION);
+}

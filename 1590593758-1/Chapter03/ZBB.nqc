@@ -1,0 +1,21 @@
+// ZBB.nqc - A simple program for the Zip-Bam-Bot chassis
+
+// motors
+#define Left OUT_A
+#define Right OUT_C
+
+// constants
+#define TURN 35
+#define FORWARD 200
+
+task main()         // main task
+{
+  while(true)       // infinite loop
+ {
+   OnFwd(Left+Right);   // turn on both motors forward
+   Wait(FORWARD);       // wait two seconds
+   Rev(Right);          // reverse right motor
+   Wait(TURN);          // wait 0.35 seconds
+   Fwd(Right);          // forward right motor
+ }
+}

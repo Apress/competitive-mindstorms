@@ -1,0 +1,29 @@
+/* ZBB3.nqc - A simple program for the Zip-Bam-Bot chassis
+   with some random that is in a function */
+
+// motors
+#define Left OUT_A
+#define Right OUT_C
+
+// constants
+#define TURN 10
+#define FORWARD 50
+
+task main()
+{
+  while(true)
+ {
+   Running();    // execute Running() function
+ }
+}
+
+void Running()                 // here is the function
+{
+   OnFwd(Left+Right);          // all this is the same code
+   Wait(FORWARD+Random(200));
+   PlaySound (SOUND_CLICK);
+   Rev(Right);
+   Wait(TURN+Random(50));
+   PlaySound (SOUND_CLICK);
+   Fwd(Right);
+}

@@ -1,0 +1,104 @@
+/* Brain-Bot-ZR1.nqh - A file holding important
+* instructions for Brain-Bot version ZR1.
+* To be included in ZR1's main program */
+
+// motors
+#define Left OUT_A
+#define Right OUT_C
+#define Switch OUT_B
+
+// constants
+#define CHANGE 35
+#define CALIBRATION 50
+#define SEARCH  100
+#define TURN_SMALL 110
+#define SPIN 400
+#define GO 500
+#define TURN 575
+#define AMOUNT 5
+
+// sensors
+#define See SENSOR_2
+#define LBump SENSOR_1
+#define RBump SENSOR_3
+
+// go forward
+void Forward()
+{
+   OnFwd(Left+Right);
+}
+
+// go in reverse
+void Reverse()
+{
+   OnRev(Left+Right);
+}
+
+// switch gears to fast speed
+void SwitchF()
+{
+   OnRev(Switch);
+   Wait(CHANGE);
+   Off(Switch);
+}
+
+// switch gears to slow speed
+void SwitchS()
+{
+   OnFwd(Switch);
+   Wait(CHANGE);
+   Off(Switch);
+}
+
+/* special function for switching gears
+*  to slow speed if robot spinning in place*/
+void SwitchSTurn()
+{
+   OnFwd(Left+Right);
+   Wait(CHANGE);
+   OnFwd(Switch);
+   Wait(CHANGE);
+   Off(Switch);
+}
+
+// turn right
+void TurnR()
+{
+   Fwd(Left);
+   Rev(Right);
+   Wait(TURN);
+   Fwd(Left+Right);
+}
+
+// turn left
+void TurnL()
+{
+   Fwd(Right);
+   Rev(Left);
+   Wait(TURN);
+   Fwd(Left+Right);
+}
+
+// turn right a little
+void TurnRL()
+{
+   Rev(Right);
+   Wait(TURN_SMALL);
+   Fwd(Left+Right);
+}
+
+// turn left a little
+void TurnLL()
+{
+   Rev(Left);
+   Wait(TURN_SMALL);
+   Fwd(Left+Right);
+}
+
+// spin in place
+void HalfSpin()
+{
+   Rev(Left);
+   Fwd(Right);
+   Wait(SPIN);
+}

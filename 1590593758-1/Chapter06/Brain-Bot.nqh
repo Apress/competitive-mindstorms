@@ -1,0 +1,67 @@
+/* Brain-Bot.nqh - A file holding important instructions
+* for the Brain-Bot chassis. To be included in any Brain-Bot
+* programs */
+
+// motors
+#define Left OUT_A
+#define Right OUT_C
+#define Switch OUT_B
+
+// constants
+#define Change 25
+#define Position 200
+#define Straight 300
+
+// go forward
+void Forward()
+{
+   OnFwd(Left+Right);
+}
+
+// go in reverse
+void Reverse()
+{
+   OnRev(Left+Right);
+}
+
+// switch gears to fast speed
+void SwitchF()
+{
+   On(Left+Right);
+   OnRev(Switch);
+   Wait(Change);
+   Off(Switch);
+}
+
+// Switch gears to slow speed
+void SwitchS()
+{
+   On(Left+Right);
+   OnFwd(Switch);
+   Wait(Change);
+   Off(Switch);
+}
+
+// turn right
+void TurnR()
+{
+   Fwd(Left);
+   Rev(Right);
+   Wait(Position);
+   Fwd(Left+Right);
+}
+
+// turn left
+void TurnL()
+{
+   Fwd(Right);
+   Rev(Left);
+   Wait(Position);
+   Fwd(Left+Right);
+}
+
+// stop
+void Stop()
+{
+   Off(Left+Right);
+}

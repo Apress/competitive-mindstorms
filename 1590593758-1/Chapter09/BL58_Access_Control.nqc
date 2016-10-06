@@ -1,0 +1,220 @@
+// BL58_Access_Control.nqc
+// A sumo-bot program for Gargantuan-Bot Version BL58
+
+#include "Gargantuan-Bot-BL58.nqh"   // include our header
+
+task main()
+{
+  SetSensor(See,SENSOR_LIGHT);   // initialize all the sensors
+  SetSensor(LBump,SENSOR_TOUCH);
+  SetSensor(Rotate,SENSOR_ROTATION);
+
+  Calibrate();    // calibrating light sensors...
+
+  OnFwd(Left+Right);    // get moving forward...
+
+  ClearSensor(Rotate); // clear the rotation sensor
+
+  start LWatch;   // turn on all five tasks!
+  start BPressed;
+  start BLWatch;
+  start BRWatch;
+  start Maneuver;
+}
+
+// Task that watches for the line
+task LWatch()
+{
+   // highest priority
+   SetPriority(0);
+
+   while(true)   // infinite loop - always check for line
+   {
+      until(See<=threshold); // until light sensor detects line
+
+         acquire(ACQUIRE_USER_1)  // get control
+         {
+             check = 0;   // allow antennae to detect
+
+             if(fwd == 1)   // if going forward...
+             {
+             Reverse();   // go the other way!
+             OnRev(Head);
+             until(Rotate==150); // move head 180 degrees
+             Off(Head);
+             fwd = 0;     // update variables!
+             rvs = 1;
+             PlaySound(SOUND_UP);
+             }
+
+             else     // if we're in reverse
+             {
+             Forward();   // go the other way!
+             OnFwd(Head);
+             until(Rotate==0);   // move head 180 degrees
+             Off(Head);
+             fwd = 1;       // update variables
+             rvs = 0;
+             PlaySound(SOUND_UP);
+             }
+         }
+      }
+}
+
+// Task Both Pressed
+task BPressed()
+{
+   // second highest priority
+   SetPriority(1);
+
+   while(true)  // infinite loop - always check
+   {
+      until(LBump==0&&See==100);  // until both sensors activated
+
+      acquire(ACQUIRE_USER_1)  // get control
+         {
+              if(fwd == 1)     // if we're going forward
+              {
+              Forward();       // keep going forward
+              until(LBump==1&See<100); // until both sensors not pressed
+              PlaySound(SOUND_UP);
+              }
+
+              else      // if we're going in reverse
+              {
+              Reverse();   // keep going in reverse
+              until(LBump==1&See<100); // until both sensors not pressed
+              PlaySound(SOUND_UP);
+              }
+         }
+    }
+}
+
+
+// Task Bump Left Watch
+task BLWatch()
+{
+   // third highest priority
+   SetPriority(2);
+
+   while(true)   // infinite loop - continually check sensor
+   {
+      // until LBump is released
+      until(LBump==0&check == 0);
+
+         acquire(ACQUIRE_USER_1)  // get control
+         {
+              TurnL();    // turn left
+              PlaySound(SOUND_UP);
+         }
+   }
+}
+
+// Task Bump Right Watch
+task BRWatch()
+{
+   // third highest priority
+   SetPriority(2);
+
+   while(true)   // infinite loop - continually check sensor
+   {
+      until(See==100&check == 0); // until RBump is pressed
+
+         acquire(ACQUIRE_USER_1)  // get control
+         {
+              TurnR();   // turn right
+              PlaySound(SOUND_UP);
+        }
+   }
+}
+
+// Our maneuvering task
+task Maneuver()
+{
+   // fourth highest priority
+   SetPriority(3);
+
+   while(true)   // continually ask for control
+   {
+         acquire(ACQUIRE_USER_1) // get control
+         {
+           Wait(GO); // wait a little while first
+
+           if(fwd == 1)  // if going forward
+           {
+            check = 1;   // prevent BLWatch() and BRWatch() from taking over
+            OnRev(Head);
+            until(Rotate==40); // check to see if we're pushing the opponent
+
+            if(LBump==0)    // if we are pusing opponent
+            {
+              Fwd(Head);
+              until(Rotate==0);  // get head back in place
+              Off(Head);
+              Forward();   // continue pushing
+              check = 0;   // allow BLWatch() and BRWatch() the ability to gain control
+              Wait(PUSH);  // push for eight seconds
+              PlaySound(SOUND_CLICK);
+            }
+
+            else if(LBump==1)       // if we aren't pushing opponent
+            {
+            check = 0;   // allow BLWatch() and BRWatch() the ability to gain control
+            Fwd(Head);
+            until(Rotate==0); // get head back in place
+            Off(Head);
+            Turn();        // turn a little
+            Forward();    // then continue going forward
+            PlaySound(SOUND_DOUBLE_BEEP);
+            }
+           }
+
+           else   // if we're going in reverse
+           {
+            check = 1;   // prevent BLWatch() and BRWatch() from taking over
+            OnRev(Head);
+            until(Rotate==190); // check to see if we're pushing the opponent
+
+            if(LBump==0)    // if we are pushing opponent
+            {
+              Fwd(Head);
+              until(Rotate==150);  // get head back in place
+              Off(Head);
+              Reverse();    // continue pushing
+              check = 0;    // allow BLWatch() and BRWatch() the ability to gain control
+              Wait(PUSH);   // push for eight seconds
+              PlaySound(SOUND_CLICK);
+            }
+
+            else if(LBump==1)   // if we aren't pushing opponent
+            {
+            check = 0;    // allow BLWatch() and BRWatch() the ability to gain control
+            Fwd(Head);
+            until(Rotate==150); // get head back in place
+            Off(Head);
+            Turn();          // turn a little
+            Reverse();       // then continue in reverse
+            PlaySound(SOUND_DOUBLE_BEEP);
+            }
+         }
+      }
+  }
+}
+
+/* This function calibrates the
+*  "line searching" light sensors */
+void Calibrate()
+{
+    until(LBump==0);
+    line=See;
+    threshold=line+AMOUNT;
+    Wait(CALIBRATION);
+    until(LBump==1);
+    PlaySound(SOUND_CLICK);
+    Wait(CALIBRATION);
+    until(LBump==0);
+    Wait(CALIBRATION);
+    until(LBump==1);
+    PlaySound(SOUND_CLICK);
+    Wait(CALIBRATION);
+}
